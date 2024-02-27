@@ -1,0 +1,6 @@
+DRIVER = 'ODBC Driver 17 for SQL Server'
+SERVER = 'LAPTOP-20HE30G7'
+DATABASE = 'CRUD_DB'
+TRUST = 'yes'
+UID = 'Jaswant'
+PASSWORD = 'test'
