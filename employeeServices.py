@@ -18,8 +18,6 @@ def getall_employee(conn=Depends(connect_to_database)):
         raise HTTPException(status_code=500, detail=f"Database query error: {str(e)}")
     finally:
         cursor.close()
-
-
 def get_employee(id: int, conn=Depends(connect_to_database)):
     cursor = conn.cursor()
     try:
