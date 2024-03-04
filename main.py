@@ -1,46 +1,17 @@
 from datetime import datetime, timedelta
 from typing import Optional
-
 from fastapi import FastAPI, HTTPException, Depends
-import pyodbc
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from starlette import status
 import jwt
 from jwt import encode
-import config
-from employeeModel import Employee
-from connection_db import connect_to_database
-from employeeServices import getall_employee, get_employee, createdata_employee, updatedata_employee, \
-    delete_data_employee
-from jwtconfig import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
+from Configuration.jwtconfig import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
+from routers import city, employee
 
 app = FastAPI()
-
-@app.get("/employee")
-async def get_all_employee(conn=Depends(connect_to_database)):
-    return getall_employee(conn)
-
-
-@app.get("/employee/{id}")
-def getbyid_employee(id: int, conn=Depends(connect_to_database)):
-    return get_employee(id, conn)
-
-
-@app.post("/employee")
-def create_employee(employee: Employee):
-    return createdata_employee(employee)
-
-
-@app.put("/employee/{id}")
-def update_employee(id: int, employee: Employee):
-    return updatedata_employee(id,employee)
-
-
-@app.delete("/employee/{id}")
-def delete_employee(id: int):
-    return delete_data_employee(id)
-
+app.include_router(city.router)
+app.include_router(employee.router)
 
 # OAuth2 password flow
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -53,9 +24,11 @@ users_db = {
     }
 }
 
+
 # User model
 class User(BaseModel):
     username: str
+
 
 # Function to authenticate user
 def authenticate_user(username: str, password: str):
@@ -63,6 +36,7 @@ def authenticate_user(username: str, password: str):
     if not user or user["password"] != password:
         return None
     return user
+
 
 # Function to create access token
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -75,6 +49,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+
 # Function to create refresh token
 def create_refresh_token(data: dict):
     to_encode = data.copy()
@@ -82,6 +57,7 @@ def create_refresh_token(data: dict):
     to_encode.update({"exp": expire})
     encoded_jwt = encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
 
 # Dependency to get current user
 async def get_current_user(token: str = Depends(oauth2_scheme)):
@@ -104,6 +80,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
     return User(username=username)
 
+
 # Login route
 @app.post("/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -118,6 +95,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     access_token = create_access_token(data={"sub": user["username"]}, expires_delta=access_token_expires)
     refresh_token = create_refresh_token(data={"sub": user["username"]})
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+
 
 # Protected route
 @app.get("/users/me")
